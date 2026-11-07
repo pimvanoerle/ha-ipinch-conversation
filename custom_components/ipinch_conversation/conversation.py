@@ -22,6 +22,7 @@ from .const import (
     TIMEOUT_S,
     TOKEN_HEADER,
     UNREACHABLE_REPLY,
+    is_closing,
 )
 
 
@@ -77,10 +78,10 @@ class IPinchConversationEntity(conversation.ConversationEntity):
         )
         response = intent.IntentResponse(language=user_input.language)
         response.async_set_speech(reply)
-        # Keep listening for an answer unless iPinch said goodbye, the way Clawlexa
-        # keeps its window open.
+        # Keep listening for an answer, the way Clawlexa keeps its window open, unless
+        # iPinch said goodbye or the person was wrapping up ("thanks pinchy").
         return conversation.ConversationResult(
             response=response,
             conversation_id=chat_log.conversation_id,
-            continue_conversation=bool(reply) and not end,
+            continue_conversation=bool(reply) and not end and not is_closing(user_input.text),
         )
