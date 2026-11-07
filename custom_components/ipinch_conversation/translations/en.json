@@ -1,0 +1,26 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to iPinch",
+        "data": {
+          "url": "Turn URL",
+          "token": "Token",
+          "device": "Device name"
+        },
+        "data_description": {
+          "url": "The bridge's turn endpoint, for example http://192.168.1.50:8780/v1/turn",
+          "token": "Sent as the X-Pinch-Token header",
+          "device": "Tells iPinch which room the voice came from"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Couldn't reach the bridge at that URL.",
+      "invalid_auth": "The bridge didn't accept that token."
+    },
+    "abort": {
+      "already_configured": "This bridge is already set up."
+    }
+  }
+}

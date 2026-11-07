@@ -1,0 +1,13 @@
+{
+  "domain": "ipinch_conversation",
+  "name": "iPinch Conversation",
+  "codeowners": ["@pimvanoerle"],
+  "config_flow": true,
+  "dependencies": ["conversation"],
+  "documentation": "https://github.com/pimvanoerle/ha-ipinch-conversation",
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/pimvanoerle/ha-ipinch-conversation/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
