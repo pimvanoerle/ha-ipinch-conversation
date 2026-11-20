@@ -8,7 +8,10 @@ from homeassistant.components import conversation
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import MATCH_ALL
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import intent
+from homeassistant.util import slugify
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -50,19 +53,38 @@ class IPinchConversationEntity(conversation.ConversationEntity):
     def supported_languages(self) -> list[str] | Literal["*"]:
         return MATCH_ALL
 
+    def _origin(self, user_input: conversation.ConversationInput) -> tuple[str, str | None]:
+        """Which device the turn came from, as the bridge names it, and that device's area.
+
+        A turn from a voice satellite carries its device: the Show named "Downstairs" in Home
+        Assistant is "downstairs-show". A turn without one (typed in Home Assistant's Assist
+        dialog) is the device set up with the integration.
+        """
+        default = self._entry.data[CONF_DEVICE]
+        if not user_input.device_id:
+            return default, None
+        device = dr.async_get(self.hass).async_get(user_input.device_id)
+        if device is None:
+            return default, None
+        name = slugify(device.name_by_user or device.name or "", separator="-")
+        area = None
+        if device.area_id and (entry := ar.async_get(self.hass).async_get_area(device.area_id)):
+            area = entry.name
+        return (f"{name}-show" if name else default), area
+
     async def _async_handle_message(
         self, user_input: conversation.ConversationInput, chat_log: conversation.ChatLog
     ) -> conversation.ConversationResult:
         data = self._entry.data
+        device, area = self._origin(user_input)
+        body = {"text": user_input.text, "conversation_id": chat_log.conversation_id, "device": device}
+        if area:
+            body["area"] = area
         reply, end = UNREACHABLE_REPLY, True
         try:
             async with async_get_clientsession(self.hass).post(
                 data[CONF_URL],
-                json={
-                    "text": user_input.text,
-                    "conversation_id": chat_log.conversation_id,
-                    "device": data[CONF_DEVICE],
-                },
+                json=body,
                 headers={TOKEN_HEADER: data[CONF_TOKEN]},
                 timeout=aiohttp.ClientTimeout(total=TIMEOUT_S),
             ) as resp:
